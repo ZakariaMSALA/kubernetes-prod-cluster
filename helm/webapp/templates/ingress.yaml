@@ -1,0 +1,35 @@
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "webapp.fullname" . }}
+  annotations:
+    kubernetes.io/ingress.class: {{ .Values.ingress.className | quote }}
+{{- if .Values.tls.enabled }}
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+{{- end }}
+spec:
+  rules:
+{{- range .Values.ingress.hosts }}
+    - host: {{ .host }}
+      http:
+        paths:
+{{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ $.Release.Name }}
+                port:
+                  number: {{ $.Values.service.port }}
+{{- end }}
+{{- end }}
+{{- if .Values.tls.enabled }}
+  tls:
+    - hosts:
+{{- range .Values.ingress.hosts }}
+        - {{ .host }}
+{{- end }}
+      secretName: webapp-tls
+{{- end }}
+{{- end }}
